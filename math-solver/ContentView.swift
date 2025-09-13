@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 struct ContentView: View {
     @StateObject private var viewModel = ChatViewModel()
@@ -63,7 +62,7 @@ struct ContentView: View {
             .padding()
             .background(.bar)
         }
-        .navigationTitle("Giải Toán")
+        .navigationTitle("Giải toán")
     }
 
     private func send() {

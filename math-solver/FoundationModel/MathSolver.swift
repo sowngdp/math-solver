@@ -74,7 +74,7 @@ actor MathSolver {
         }
 #endif
 
-        // Heuristic fallback: try to evaluate simple arithmetic using NSExpression
+        // Heuristic fallback: evaluate simple arithmetic using a strict parser
         if let value = Self.evaluateArithmetic(problem) {
             return "Kết quả: \(value)"
         }
@@ -82,12 +82,20 @@ actor MathSolver {
     }
 
     private static func evaluateArithmetic(_ input: String) -> Double? {
-        // Extract a simple math expression from the input
+        // Strict tokenization: only digits, whitespace, and + - * / ( ) . ,
         let allowed = CharacterSet(charactersIn: "0123456789+-*/()., ")
-        let filtered = String(input.unicodeScalars.filter { allowed.contains($0) })
-            .replacingOccurrences(of: ",", with: ".")
-        guard !filtered.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        let expression = NSExpression(format: filtered)
+        let filteredScalars = input.unicodeScalars.filter { allowed.contains($0) }
+        guard !filteredScalars.isEmpty else { return nil }
+        let filtered = String(filteredScalars).replacingOccurrences(of: ",", with: ".")
+        let trimmed = filtered.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        // Reject suspicious patterns: consecutive dots, letters, quotes, colons, semicolons
+        if trimmed.range(of: "[A-Za-z'\";:]", options: .regularExpression) != nil { return nil }
+        if trimmed.contains("..") { return nil }
+
+        // Evaluate with NSExpression on sanitized input
+        let expression = NSExpression(format: trimmed)
         if let result = expression.expressionValue(with: nil, context: nil) as? NSNumber {
             return result.doubleValue
         }
